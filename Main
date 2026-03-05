@@ -1,29 +1,111 @@
-local PlaceId = game.PlaceId
-local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/main/"
-local function notify(msg)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Average Hub",
-        Text = msg,
-        Duration = 5
-    })
-end
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Games = {
-    [102438325176100] = "Anipixel.lua",
-    [17720162456] = "Sortd.lua",
+-- State Management
+local MacroManager = {
+    IsRecording = false,
+    IsPlaying = false,
+    StartTime = 0,
+    CurrentMacro = {},
+    Step = 1,
+    SelectedFile = nil
 }
 
-if Games[PlaceId] then
-    local fileName = Games[PlaceId]
-    local success, scriptContent = pcall(function()
-        return game:HttpGet(BaseURL .. fileName)
-    end)
+-- Folder Setup
+local RootFolder = "AverageHub"
+local MacroFolder = RootFolder .. "/Macros/" .. game.PlaceId
+if not isfolder(RootFolder) then makefolder(RootFolder) end
+if not isfolder(MacroFolder) then makefolder(MacroFolder) end
 
-    if success then
-        loadstring(scriptContent)()
-    else
-        notify("Failed to load script from GitHub.")
+-- UI Initialization (Visible in Lobby and Game)
+local Window = Rayfield:CreateWindow({
+    Name = "Average Hub | TD Macro Pro",
+    LoadingTitle = "Average Hub Loading...",
+    LoadingSubtitle = "Universal Mode",
+    ConfigurationSaving = { Enabled = false }
+})
+
+local MainTab = Window:CreateTab("Macro Manager")
+
+-- Helper: Check if we are in a match
+local function IsInMatch()
+    local funcs = ReplicatedStorage:FindFirstChild("Functions")
+    if not funcs then
+        Rayfield:Notify({Title = "Action Denied", Content = "You must be in a match to use this!"})
+        return nil
     end
-else
-    notify("No script supported for this game.")
+    return funcs
 end
+
+-- RECORDING SECTION
+MainTab:CreateSection("Recording")
+
+MainTab:CreateToggle({
+    Name = "Record Macro",
+    CurrentValue = false,
+    Callback = function(Value)
+        local funcs = IsInMatch() --
+        if not funcs then return end -- Blocks recording in lobby
+
+        if Value then
+            MacroManager.CurrentMacro = {}
+            MacroManager.Step = 1
+            MacroManager.StartTime = tick()
+            MacroManager.IsRecording = true
+            Rayfield:Notify({Title = "Macro", Content = "Recording Started!"})
+        else
+            MacroManager.IsRecording = false
+        end
+    end,
+})
+
+-- PLAYBACK SECTION
+MainTab:CreateSection("Playback")
+
+MainTab:CreateButton({
+    Name = "Play Selected Macro",
+    Callback = function()
+        local funcs = IsInMatch() --
+        if not funcs or not MacroManager.SelectedFile or MacroManager.IsPlaying then return end
+        
+        local raw = readfile(MacroFolder .. "/" .. MacroManager.SelectedFile .. ".json")
+        local data = HttpService:JSONDecode(raw) --
+        MacroManager.IsPlaying = true
+        local pStartTime = tick()
+        
+        -- Playback logic using your JSON structure
+        task.spawn(function()
+            for _, action in pairs(data) do -- Should be sorted in a real scenario
+                if not MacroManager.IsPlaying then break end
+                repeat task.wait() until (tick() - pStartTime) >= action.time
+                
+                if action.type == "Place" then
+                    funcs.SpawnNewTower:InvokeServer(action.unit, action.pos) --
+                end
+            end
+            MacroManager.IsPlaying = false
+        end)
+    end,
+})
+
+-- THE HOOK (Silent in background, only logs if IsRecording is true)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    local funcs = ReplicatedStorage:FindFirstChild("Functions") --
+
+    if MacroManager.IsRecording and method == "InvokeServer" and funcs then
+        if self == funcs.SpawnNewTower then --
+            MacroManager.CurrentMacro[tostring(MacroManager.Step)] = {
+                type = "Place",
+                time = tick() - MacroManager.StartTime, --
+                pos = tostring(args[2]),
+                unit = args[1]
+            }
+            MacroManager.Step = MacroManager.Step + 1
+        end
+    end
+    return oldNamecall(self, ...)
+end)
