@@ -1,0 +1,32 @@
+local PlaceId = game.PlaceId
+local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/main/"
+
+-- Function for the "No Script" notification
+local function notify(msg)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Average Hub",
+        Text = msg,
+        Duration = 5
+    })
+end
+
+-- Game List (Add your PlaceIds here)
+local Games = {
+    [123456789] = "AniPixels.lua", -- Replace with AniPixels ID
+    [987654321] = "Brainrot.lua",  -- Replace with Brainrot ID
+}
+
+if Games[PlaceId] then
+    local fileName = Games[PlaceId]
+    local success, scriptContent = pcall(function()
+        return game:HttpGet(BaseURL .. fileName)
+    end)
+
+    if success then
+        loadstring(scriptContent)()
+    else
+        notify("Failed to load script from GitHub.")
+    end
+else
+    notify("No script supported for this game.")
+end
