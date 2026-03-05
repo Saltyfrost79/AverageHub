@@ -12,8 +12,8 @@ end
 
 -- Game List (Add your PlaceIds here)
 local Games = {
-    [123456789] = "AniPixels.lua", -- Replace with AniPixels ID
-    [987654321] = "Brainrot.lua",  -- Replace with Brainrot ID
+    [102438325176100] = "AniPixels.lua",
+    [99248392277037] = "Umeleerng.lua",
 }
 
 if Games[PlaceId] then
