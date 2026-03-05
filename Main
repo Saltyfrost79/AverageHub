@@ -1,5 +1,5 @@
 local PlaceId = game.PlaceId
-local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/refs/heads/main/Main"
+local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/main/"
 
 -- Function for the "No Script" notification
 local function notify(msg)
