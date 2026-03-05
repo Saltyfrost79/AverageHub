@@ -1,7 +1,5 @@
 local PlaceId = game.PlaceId
 local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/main/"
-
--- Function for the "No Script" notification
 local function notify(msg)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Average Hub",
@@ -10,7 +8,6 @@ local function notify(msg)
     })
 end
 
--- Game List (Add your PlaceIds here)
 local Games = {
     [102438325176100] = "AniPixels.lua",
     [99248392277037] = "Umeleerng.lua",
