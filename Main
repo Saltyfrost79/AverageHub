@@ -9,7 +9,7 @@ local function notify(msg)
 end
 
 local Games = {
-    [102438325176100] = "AniPixels.lua",
+    [102438325176100] = "Anipixel.lua",
     [99248392277037] = "Umeleerng.lua",
 }
 
