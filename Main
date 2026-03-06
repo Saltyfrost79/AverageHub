@@ -1,99 +1,29 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- State Management
-local MacroManager = {
-    IsRecording = false,
-    IsPlaying = false,
-    StartTime = 0,
-    CurrentMacro = {},
-    Step = 1,
-    SelectedFile = nil
-}
-
--- Folder Setup
-local RootFolder = "AverageHub"
-local MacroFolder = RootFolder .. "/Macros/" .. game.PlaceId
-if not isfolder(RootFolder) then makefolder(RootFolder) end
-if not isfolder(MacroFolder) then makefolder(MacroFolder) end
-
--- Helper: This replaces the error-causing 'WaitForChild'
-local function GetMatchFunctions()
-    local funcs = ReplicatedStorage:FindFirstChild("Functions")
-    if not funcs then
-        Rayfield:Notify({
-            Title = "Lobby Detected",
-            Content = "Macro functions are disabled until you join a match.",
-            Duration = 5
-        })
-        return nil
-    end
-    return funcs
+local PlaceId = game.PlaceId
+local BaseURL = "https://raw.githubusercontent.com/Saltyfrost79/AverageHub/main/"
+local function notify(msg)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Average Hub",
+        Text = msg,
+        Duration = 5
+    })
 end
 
--- UI Initialization (Loads immediately in Lobby)
-local Window = Rayfield:CreateWindow({
-    Name = "Average Hub | TD Macro Pro",
-    LoadingTitle = "Average Hub",
-    LoadingSubtitle = "Universal Mode",
-    ConfigurationSaving = { Enabled = false }
-})
+local Games = {
+    [102438325176100] = "Anipixel.lua",
+    [17720162456] = "Sortd.lua",
+}
 
-local MainTab = Window:CreateTab("Macro Manager")
+if Games[PlaceId] then
+    local fileName = Games[PlaceId]
+    local success, scriptContent = pcall(function()
+        return game:HttpGet(BaseURL .. fileName)
+    end)
 
--- RECORDING SECTION
-MainTab:CreateSection("Recording")
-
-MainTab:CreateToggle({
-    Name = "Record Macro",
-    CurrentValue = false,
-    Callback = function(Value)
-        if Value then
-            local funcs = GetMatchFunctions() -- Checks only when clicked
-            if not funcs then 
-                -- Reset the toggle if we aren't in a match
-                return 
-            end
-            
-            MacroManager.CurrentMacro = {}
-            MacroManager.Step = 1
-            MacroManager.StartTime = tick()
-            MacroManager.IsRecording = true
-            Rayfield:Notify({Title = "Macro", Content = "Recording Started!"})
-        else
-            MacroManager.IsRecording = false
-        end
-    end,
-})
-
--- PLAYBACK SECTION
-MainTab:CreateSection("Playback")
-
--- [File loading and sorting logic same as before, using Rougelike.json format]
-
-MainTab:CreateButton({
-    Name = "Play Selected Macro",
-    Callback = function()
-        local funcs = GetMatchFunctions() -- Checks only when clicked
-        if not funcs or not MacroManager.SelectedFile or MacroManager.IsPlaying then return end
-        
-        -- Replay logic...
-    end,
-})
-
--- THE HOOK (Now safe for Lobby use)
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    -- We only try to find 'Functions' if the user is actually recording
-    if MacroManager.IsRecording and method == "InvokeServer" then
-        local funcs = ReplicatedStorage:FindFirstChild("Functions")
-        if funcs and self.Parent == funcs then
-            -- Log placement/upgrades
-        end
+    if success then
+        loadstring(scriptContent)()
+    else
+        notify("Failed to load script from GitHub.")
     end
-    return oldNamecall(self, ...)
-end)
+else
+    notify("No script supported for this game.")
+end
